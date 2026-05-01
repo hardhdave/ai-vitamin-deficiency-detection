@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VitaCares AI Chat Box</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        :root {
+            --blue: #0188df;
+            --black: #444d53;
+            --white: #fff;
+            --light-gray: #f5f7fa;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 10rem;
+        }
+
+        header {
+            width: 96%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translate(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        header .logo { font-size: 3rem; color: var(--black); text-decoration: none; }
+        header .logo span { color: var(--blue); }
+        header .navbar ul { display: flex; list-style: none; }
+        header .navbar ul li { margin: 0 1rem; }
+        header .navbar ul li a { font-size: 2rem; color: var(--black); text-decoration: none; }
+        header .navbar ul li a:hover { color: var(--blue); }
+
+        .chat-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: var(--white);
+            border-radius: 1.5rem;
+            display: flex;
+            height: 70vh;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .symptoms-sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            border-right: 1px solid #eee;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .symptoms-sidebar h3 {
+            color: var(--blue);
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-box {
+            margin-bottom: 1.5rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid #ddd;
+            border-radius: 0.8rem;
+            font-size: 1.4rem;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--blue);
+        }
+
+        .symptom-tag {
+            display: block;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: var(--white);
+            border: 1px solid #ddd;
+            border-radius: 0.8rem;
+            cursor: pointer;
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+        }
+
+        .symptom-tag:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+            transform: translateX(5px);
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 1.2rem 1.6rem;
+            border-radius: 1.5rem;
+            font-size: 1.6rem;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--blue);
+            color: var(--white);
+            border-bottom-right-radius: 0.2rem;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: #eee;
+            color: var(--black);
+            border-bottom-left-radius: 0.2rem;
+        }
+
+        .chat-input-area {
+            padding: 2rem;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 1.2rem 2rem;
+            border: 1px solid #ddd;
+            border-radius: 2.5rem;
+            font-size: 1.6rem;
+            outline: none;
+        }
+
+        .chat-input-area input:focus {
+            border-color: var(--blue);
+        }
+
+        .chat-input-controls {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .image-upload-btn {
+            width: 5rem;
+            height: 5rem;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: var(--white);
+            color: var(--blue);
+            cursor: pointer;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .image-upload-btn:hover {
+            transform: scale(1.08);
+            border-color: var(--blue);
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
+
+        .image-preview-bar {
+            width: 100%;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.4rem;
+            background: var(--light-gray);
+            border-radius: 1rem;
+            font-size: 1.4rem;
+            color: var(--black);
+        }
+
+        .image-preview-bar.active {
+            display: flex;
+        }
+
+        .image-preview-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .remove-image-btn {
+            border: none;
+            background: transparent;
+            color: #d9534f;
+            font-size: 1.6rem;
+            cursor: pointer;
+        }
+
+        .send-btn {
+            background: var(--blue);
+            color: var(--white);
+            border: none;
+            width: 5rem;
+            height: 5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .chat-container { flex-direction: column; height: auto; margin: 1rem; }
+            .symptoms-sidebar { width: 100%; height: 200px; border-right: none; border-bottom: 1px solid #eee; }
+            .chat-main { height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo"><h2><span>v</span>ita <span>C</span>ares</h2></a>
+        <nav class="navbar">
+            <ul>
+                <li><a href="/">home</a></li>
+                <li><a href="/about">about</a></li>
+                <li><a href="/vita">vitamins</a></li>
+                <li><a href="/diseases">diseases</a></li>
+                <li><a href="/predict">check vitamins</a></li>
+                <li><a href="/chat">chat box</a></li>
+                <li><a href="/contact">contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="chat-container">
+        <div class="symptoms-sidebar">
+            <h3>Quick Selection</h3>
+            <div class="search-box">
+                <input type="text" id="symptomSearch" placeholder="Search symptoms..." onkeyup="filterSymptoms()">
+            </div>
+            <div id="symptomList">
+                <div class="symptom-tag" onclick="selectSymptom('I have pale skin and feel very tired.')">Pale Skin & Fatigue</div>
+                <div class="symptom-tag" onclick="selectSymptom('My nails are brittle and have white spots.')">Brittle Nails</div>
+                <div class="symptom-tag" onclick="selectSymptom('I am experiencing hair loss lately.')">Hair Loss</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have mouth ulcers and cracks at corners of mouth.')">Mouth Ulcers</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have trouble seeing in low light/night blindness.')">Night Blindness</div>
+                <div class="symptom-tag" onclick="selectSymptom('My gums bleed easily when brushing.')">Bleeding Gums</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have frequent muscle cramps.')">Muscle Cramps</div>
+                <div class="symptom-tag" onclick="selectSymptom('I feel numbness and tingling in my hands and feet.')">Tingling in Hands/Feet</div>
+                <div class="symptom-tag" onclick="selectSymptom('I am getting bruises very easily lately.')">Easy Bruising</div>
+                <div class="symptom-tag" onclick="selectSymptom('My wounds are healing very slowly.')">Slow Wound Healing</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have dry, scaly skin and rashes.')">Dry/Scaly Skin</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have been feeling very irritable and depressed lately.')">Mood Swings/Irritability</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have joint pain and swelling.')">Joint Pain</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have a swollen, sore, or red tongue.')">Swollen/Red Tongue</div>
+                <div class="symptom-tag" onclick="selectSymptom('I am experiencing dizziness and poor balance.')">Dizziness & Balance</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have spoon-shaped finger nails.')">Spoon-Shaped Nails</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have dry eyes and bitot spots.')">Dry Eyes</div>
+                <div class="symptom-tag" onclick="selectSymptom('I am having trouble sleeping/insomnia.')">Insomnia</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have poor concentration and memory issues.')">Poor Concentration</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have lost my appetite and feel weak.')">Loss of Appetite</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have frequent headaches and light sensitivity.')">Headaches</div>
+                <div class="symptom-tag" onclick="selectSymptom('My hair has become very dry and brittle.')">Dry/Brittle Hair</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have skin patches that are darker or lighter.')">Skin Pigmentation</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have cold hands and feet.')">Cold Extremities</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have chest pain or heart palpitations.')">Heart Palpitations</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have shorteness of breath even with light activity.')">Shortness of Breath</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have regular digestive issues like diarrhea.')">Digestive Issues</div>
+                <div class="symptom-tag" onclick="selectSymptom('I have yellowing of the skin or eyes (jaundice).')">Yellowing Skin/Eyes</div>
+            </div>
+        </div>
+
+        <div class="chat-main">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
+                    Hello! I'm VitaCares AI. Select a symptom or ask me anything about vitamin deficiencies.
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="image-preview-bar" id="imagePreviewBar">
+                    <span class="image-preview-name" id="imagePreviewName"></span>
+                    <button type="button" class="remove-image-btn" onclick="clearSelectedImage()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="chat-input-controls">
+                    <label for="chatImageInput" class="image-upload-btn" title="Attach photo">
+                        <i class="fas fa-image"></i>
+                    </label>
+                    <input type="file" id="chatImageInput" class="hidden-file-input" accept="image/*">
+                    <input type="text" id="userInput" placeholder="Type your query here..." onkeypress="handleKeyPress(event)">
+                    <button class="send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const chatImageInput = document.getElementById('chatImageInput');
+        const imagePreviewBar = document.getElementById('imagePreviewBar');
+        const imagePreviewName = document.getElementById('imagePreviewName');
+
+        function appendMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}-message`;
+            msgDiv.innerText = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function updateSelectedImageUI() {
+            if (chatImageInput.files && chatImageInput.files[0]) {
+                imagePreviewName.innerText = `Attached photo: ${chatImageInput.files[0].name}`;
+                imagePreviewBar.classList.add('active');
+            } else {
+                imagePreviewName.innerText = '';
+                imagePreviewBar.classList.remove('active');
+            }
+        }
+
+        function clearSelectedImage() {
+            chatImageInput.value = '';
+            updateSelectedImageUI();
+        }
+
+        async function sendMessage() {
+            const query = userInput.value.trim();
+            const hasImage = chatImageInput.files && chatImageInput.files[0];
+            if (!query && !hasImage) return;
+
+            appendMessage('user', query || 'Please review this uploaded medical photo.');
+            userInput.value = '';
+
+            try {
+                const formData = new FormData();
+                formData.append('query', query || 'Please review this uploaded medical photo for possible vitamin-deficiency-related signs.');
+                if (hasImage) {
+                    formData.append('image', chatImageInput.files[0]);
+                }
+
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.response) {
+                    appendMessage('ai', data.response);
+                } else {
+                    appendMessage('ai', "Error: " + (data.error || "Something went wrong"));
+                }
+            } catch (error) {
+                appendMessage('ai', "Error connecting to server.");
+            } finally {
+                clearSelectedImage();
+            }
+        }
+
+        function selectSymptom(text) {
+            userInput.value = text;
+            sendMessage();
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        chatImageInput.addEventListener('change', updateSelectedImageUI);
+
+        function filterSymptoms() {
+            const query = document.getElementById('symptomSearch').value.toLowerCase();
+            const tags = document.querySelectorAll('.symptom-tag');
+            tags.forEach(tag => {
+                const text = tag.innerText.toLowerCase();
+                tag.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
